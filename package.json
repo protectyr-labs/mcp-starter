@@ -1,0 +1,35 @@
+{
+  "name": "@protectyr-labs/mcp-starter",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Production-grade MCP server starter template. Stdio transport, modular tools, graceful shutdown, audit logging.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "mcp-starter": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "starter",
+    "template",
+    "stdio",
+    "tools"
+  ],
+  "author": "Alexander Madaniev",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}
