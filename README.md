@@ -1,6 +1,6 @@
 # mcp-starter
 
-> Production-ready MCP server template. Clone and build.
+> A starter template for building MCP servers. Clone it, add your tools, ship it. Handles stdio transport, graceful shutdown, and the gotchas that bite every first-time MCP developer.
 
 [![CI](https://github.com/protectyr-labs/mcp-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/protectyr-labs/mcp-starter/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -37,6 +37,28 @@ Add to `claude_desktop_config.json`:
 - **3 example tools** -- `create_item`, `get_item`, `list_items` (replace with yours)
 - **Graceful shutdown** -- handles SIGINT, SIGTERM, uncaughtException
 - **CI pipeline** -- tests on Node 18, 20, and 22
+
+## Use Cases
+
+**"I want to build an MCP server but don't know where to start"** — 
+Clone this repo, replace the example tools with your own, and you have
+a working MCP server in 10 minutes. The hard parts (stdio transport,
+graceful shutdown, the console.log footgun) are handled.
+
+**Internal tools for Claude** — Give Claude access to your database,
+API, or file system via custom MCP tools. This template shows the
+pattern: define tools in `src/tools/`, register them, and Claude
+can call them.
+
+**Prototyping agent capabilities** — Before building a full agent
+system, prototype individual tools as MCP endpoints. Test them
+with Claude Desktop, iterate on the interface, then integrate
+into your agent framework.
+
+**Teaching MCP development** — Use this as a reference implementation
+when onboarding engineers to MCP. The code is minimal, commented,
+and demonstrates every production pattern (stdio, shutdown, no
+console.log, tool registration).
 
 ## Adding Your Own Tools
 
