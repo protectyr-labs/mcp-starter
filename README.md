@@ -1,12 +1,22 @@
-# mcp-starter
+<p align="center">
+  <img src="docs/assets/banner.svg" alt="mcp-starter banner" width="100%">
+</p>
 
-> A starter template for building MCP servers. Clone it, add your tools, ship it. Handles stdio transport, graceful shutdown, and the gotchas that bite every first-time MCP developer.
+<p align="center">
+  <a href="https://github.com/protectyr-labs/mcp-starter/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/protectyr-labs/mcp-starter/ci.yml?style=flat-square&label=CI" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License: MIT"></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.4-blue?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript 5.4"></a>
+  <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-a78bfa?style=flat-square" alt="MCP compatible"></a>
+</p>
 
-[![CI](https://github.com/protectyr-labs/mcp-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/protectyr-labs/mcp-starter/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue.svg)](https://www.typescriptlang.org/)
+<p align="center">
+  Production-grade MCP server template.<br>
+  Stdio transport, modular tools, graceful shutdown, audit logging.
+</p>
 
-Everything you need to build a production MCP server: stdio transport, modular tool registration, graceful shutdown, and the `console.log` footgun handled for you.
+---
+
+Clone it, add your tools, ship it. Handles stdio transport, graceful shutdown, and the gotchas that bite every first-time MCP developer.
 
 ## Quick Start
 
@@ -29,6 +39,31 @@ Add to `claude_desktop_config.json`:
 }
 ```
 
+## Architecture
+
+```mermaid
+flowchart LR
+    Client[MCP Client]
+    Stdio[Stdio Transport]
+    Server[MCP Server Core]
+    Tools[Tool Registry]
+    T1[create_item]
+    T2[get_item]
+    T3[list_items]
+    T4[your_tool]
+    Shutdown[Shutdown Handler]
+
+    Client <-->|stdin / stdout| Stdio
+    Stdio <--> Server
+    Server --> Tools
+    Tools --> T1
+    Tools --> T2
+    Tools --> T3
+    Tools -.-> T4
+    Server --> Shutdown
+    Shutdown ---|SIGINT, SIGTERM| Server
+```
+
 ## What You Get
 
 - **Stdio transport** -- correct lifecycle, clean shutdown on SIGINT/SIGTERM
@@ -40,25 +75,17 @@ Add to `claude_desktop_config.json`:
 
 ## Use Cases
 
-**"I want to build an MCP server but don't know where to start"** — 
-Clone this repo, replace the example tools with your own, and you have
-a working MCP server in 10 minutes. The hard parts (stdio transport,
-graceful shutdown, the console.log footgun) are handled.
+**I want to build an MCP server but don't know where to start.**
+Clone this repo, replace the example tools with your own, and you have a working MCP server in 10 minutes. The hard parts (stdio transport, graceful shutdown, the console.log footgun) are handled.
 
-**Internal tools for Claude** — Give Claude access to your database,
-API, or file system via custom MCP tools. This template shows the
-pattern: define tools in `src/tools/`, register them, and Claude
-can call them.
+**Internal tools for Claude.**
+Give Claude access to your database, API, or file system via custom MCP tools. This template shows the pattern: define tools in `src/tools/`, register them, and Claude can call them.
 
-**Prototyping agent capabilities** — Before building a full agent
-system, prototype individual tools as MCP endpoints. Test them
-with Claude Desktop, iterate on the interface, then integrate
-into your agent framework.
+**Prototyping agent capabilities.**
+Before building a full agent system, prototype individual tools as MCP endpoints. Test them with Claude Desktop, iterate on the interface, then integrate into your agent framework.
 
-**Teaching MCP development** — Use this as a reference implementation
-when onboarding engineers to MCP. The code is minimal, commented,
-and demonstrates every production pattern (stdio, shutdown, no
-console.log, tool registration).
+**Teaching MCP development.**
+Use this as a reference implementation when onboarding engineers to MCP. The code is minimal, commented, and demonstrates every production pattern (stdio, shutdown, no console.log, tool registration).
 
 ## Adding Your Own Tools
 
@@ -98,6 +125,26 @@ registerUserTools(server);
 
 3. `npm run build && npm test`
 
+## Design Decisions
+
+### ADR-001: Stdio over HTTP
+
+The MCP spec defines stdio as the transport for local servers. When Claude Desktop launches your server, it communicates over stdin/stdout using JSON-RPC. No port conflicts, no firewall issues, no authentication layer needed. Process lifecycle is managed by the client. HTTP transport exists in the spec for remote servers, but most MCP servers are local tools. Start with stdio.
+
+### ADR-002: Modular tool registration
+
+Each tool group lives in its own file under `src/tools/`. Add a tool group: create a file, export a register function, add one line to `src/tools/index.ts`. Remove a tool group: delete the file and remove the import. Test a tool group: import its logic directly without starting the server. The alternative (all tools in one giant file) becomes unmanageable past 5-6 tools.
+
+### ADR-003: No console.log, ever
+
+The stdio transport uses stdout for JSON-RPC messages. A single `console.log("debugging...")` injects invalid data into the protocol stream, causing parse errors on the client side, dropped tool responses, and silent failures. All logging uses `console.error()`, which writes to stderr. This rule applies to every dependency you import.
+
+### ADR-004: Graceful shutdown
+
+MCP servers often hold resources: database connections, file handles, background pollers. The template handles SIGINT (Ctrl+C), SIGTERM (container stop), and uncaughtException. Add your cleanup logic inside the `shutdown()` function.
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full rationale.
+
 ## Production Checklist
 
 | Check | Why |
@@ -119,7 +166,12 @@ registerUserTools(server);
 - No authentication (add your own middleware)
 - Single-process only (no horizontal scaling)
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for design decisions.
+> [!NOTE]
+> This template targets local MCP servers using stdio transport. For remote/HTTP deployments, additional infrastructure (authentication, load balancing, health checks) is required.
+
+## Origin
+
+Built by [Protectyr Labs](https://github.com/protectyr-labs) while developing MCP tool servers for cybersecurity automation. After rebuilding the same stdio/shutdown/registration scaffolding across multiple projects, we extracted the pattern into this starter template. Every design choice comes from a production bug we hit first.
 
 ## License
 
